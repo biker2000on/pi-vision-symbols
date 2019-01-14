@@ -1,0 +1,7 @@
+<div ng-style="{ 'background-color': config.BackgroundColor, 'border-radius': config.BorderRadius + 'px'}">
+  <h2>{{Label}} | {{Units}}</h2>
+  <h3>Total Count = {{Values.length}}</h3>
+  <div ng-repeat="Value in Values">
+    {{Value.Time}}  |  {{Value.Value | number: config.DisplayDigits }}
+  </div>
+</div>
