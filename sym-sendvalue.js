@@ -44,8 +44,8 @@
 	PV.deriveVisualizationFromBase(symbolVis);
 		
 	var baseUrl = PV.ClientSettings.PIWebAPIUrl.replace(/\/?$/, '/'); //Example: "https://server.domain.com/piwebapi/";
-	console.log(baseUrl)	
-	
+	// console.log(baseUrl)	
+
 	symbolVis.prototype.init = function (scope, elem, $http, $q){
 			
 		var TYPES = {
