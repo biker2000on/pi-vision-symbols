@@ -426,7 +426,7 @@
 					}
 				
 				});		   
-				console.log(batchRequest);
+				// console.log(batchRequest);
 			return JSON.stringify(batchRequest);
 		};
 
