@@ -18,6 +18,7 @@
 				traceColor: 'blue',
 				cumulative: false, 
 				title: "Histogram",
+				Intervals: 10000,
 			} 
 		},
 		configOptions: function () {
@@ -77,7 +78,7 @@
 						{
 							// opacity:0.8,
 							type: 'histogram',
-							cumulative: {enabled: scope.config.cumulative},
+							// cumulative: {enabled: scope.config.cumulative},
 							x: dataArray[0],
 							marker: {
 								color: scope.config.traceColor,
@@ -108,7 +109,7 @@
 						{
 							opacity:0.8,
 							type: 'histogram',
-							cumulative: {enabled: scope.config.cumulative},
+							// cumulative: {enabled: scope.config.cumulative},
 							x: dataArray[0],
 							marker: {
 								color: scope.config.traceColor,
@@ -118,10 +119,10 @@
 					var layout = {
 						title: scope.config.title,
 					}
-					var out = Plotly.validate(plotlydata, layout)
+					var out = Plotly.validate(plotlydata)
 					console.log("Validate: ", out)
 					// Refresh the graph
-					Plotly.update(container, plotlydata, layout);
+					Plotly.react(container, plotlydata, layout);
 				}
 			}
 		}
