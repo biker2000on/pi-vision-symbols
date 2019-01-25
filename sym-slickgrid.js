@@ -9,6 +9,7 @@
 		displayName: "Excel-Like Data Grid",
 		visObjectType: symbolVis,
 		datasourceBehavior: PV.Extensibility.Enums.DatasourceBehaviors.Multiple,
+		noExpandSelector: '.youshallnotpass',
 		iconUrl: '/Scripts/app/editor/symbols/ext/Icons/grid.svg',
 		getDefaultConfig: function(){ 
 			return { 
