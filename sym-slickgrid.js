@@ -25,7 +25,7 @@
 				textColor: 'black',
 				defaultTimestamp: '*',
 				colorLevels: [],
-				defaultColorLevel: [12,15],
+				defaultColorLevel: [12,15,17,18],
 			} 
 		},
 		configOptions: function () {
@@ -45,39 +45,65 @@
 	symbolVis.prototype.init = function(scope, elem, $http, $q) { 
 		var container = elem.find('#grid')[0]
 		container.id = 'grid_' + scope.symbol.Name
-		// var gridOptions = getConfig()
-		// new agGrid.Grid(container, gridOptions)
 		this.onDataUpdate = dataUpdate
+
+		function statusFormatter(row, cell, value, columnDef, dataContext) {
+			var rtn = { text: value, removeClasses: 'red orange green' };
+			let ll = scope.config.colorLevels[columnDef.field[5]][0]
+			let lo = scope.config.colorLevels[columnDef.field[5]][1]
+			let hi = scope.config.colorLevels[columnDef.field[5]][2]
+			let hh = scope.config.colorLevels[columnDef.field[5]][3]
+      if (value !== null || value !== "") {
+        if (value < ll) {
+          rtn.addClasses = "red";
+        } else if (value < lo) {
+          rtn.addClasses =  "orange";
+        } else if (value < hi) {
+          rtn.addClasses =  "green";
+        } else if (value < hh) {
+					rtn.addClasses = "orange"
+				} else {
+					rtn.addClasses = "red"
+				}
+      }
+      return rtn;
+		}
 		
-		// New Slickgrid implementation
-		var grid;
-		var columns = [
-			{id: "title", name: "Title", field: "title"},
-			{id: "duration", name: "Duration", field: "duration"},
-			{id: "%", name: "% Complete", field: "percentComplete"},
-			{id: "start", name: "Start", field: "start"},
-			{id: "finish", name: "Finish", field: "finish"},
-			{id: "effort-driven", name: "Effort Driven", field: "effortDriven"}
-		];
+		var columns = getConfig()
+		// console.log(columns)
 		var options = {
 			enableCellNavigation: true,
-			enableColumnReorder: false
+			enableColumnReorder: false,
+			enableAddRow: true,
 		};
-		$(function () {
-			var data = [];
-			for (var i = 0; i < 500; i++) {
-				data[i] = {
-					title: "Task " + i,
-					duration: "5 days",
-					percentComplete: Math.round(Math.random() * 100),
-					start: "01/01/2009",
-					finish: "01/05/2009",
-					effortDriven: (i % 5 == 0)
-				};
-			}
-		
-		grid = new Slick.Grid(container, data, columns, options);
-		})
+		// console.log(options)
+		let data = []
+		data[0] = {timestamp: Date.now()}
+		data[1] = {timestamp: Date.now()}
+		// console.log(data)
+		let grid = new Slick.Grid(container, data, columns, options);
+		// var columns = [
+		// 	{id: "title", name: "Title", field: "title"},
+		// 	{id: "duration", name: "Duration", field: "duration"},
+		// 	{id: "%", name: "% Complete", field: "percentComplete", width: 80, resizable: false, formatter: statusFormatter},
+		// 	{id: "start", name: "Start", field: "start"},
+		// 	{id: "finish", name: "Finish", field: "finish"},
+		// 	{id: "effort-driven", name: "Effort Driven", field: "effortDriven", formatter: Slick.Formatters.Checkmark}
+		// ];
+		// $(function () {
+		// 	var data = [];
+		// 	for (var i = 0; i < 500; i++) {
+		// 		data[i] = {
+		// 			title: "Task " + i,
+		// 			duration: "5 days",
+		// 			percentComplete: Math.round(Math.random() * 100),
+		// 			start: "01/01/2009",
+		// 			finish: "01/05/2009",
+		// 			effortDriven: (i % 5 == 0)
+		// 		};
+		// 	}
+
+				
 		// Scope setup
 		if (scope.config.colorLevels == false) {
 			scope.config.colorLevels = scope.symbol.DataSources.map(function(c) {
@@ -91,41 +117,13 @@
 		});
 
 		function getConfig() {
-			var columnDefs = [
-				{headerName: "Timestamp", field: 'time', comparator: dateComparison},
-				// {headerName: "sortableDate", field: 'datetime'},
+			let columns = [
+				{id: 'timestamp', name: 'Datetime', field: 'timestamp'},
+				// {id: "sortableDate", name: 'Sortable Date', field: 'sortableDate'},
 			]
-		
-			// let the grid know which columns and what data to use
-			return {
-				columnDefs: columnDefs,
-				enableSorting: true,
-				enableFilter: true,
-				enableColResize: true,
-				onCellValueChanged: function(event) {
-					console.log(event)
-					if (event.colDef.field === "time") return
-					// which point/attribute was edited
-					// event.colDef.headerName will return the point name or 
-					console.log("Column Number: " + event.colDef.field[5] + "\n" + scope.config.DataSources[event.colDef.field[5]])
-					// get the correct streamId
-					let streams = getStreams(scope.config.DataSources)
-					// console.log(streams)
-					// console.log(scope.runtimeData.streamList)
-					let time = event.data.time
-					let value = event.value
-					if (event.newValue != event.oldValue) {
-						// sendValues takes (index, time, value)
-						// build data object to send to PIWebAPI
-						// send data object to PIWebAPI
-						sendValues(event.colDef.field[5], time, value)
-						console.log("sent values " + time + "   " + value)
-						scope.$root.$broadcast('refreshDataForChangedSymbols')
-					}
-				}
-			};
-	
-		}
+			console.log(columns)
+			return columns
+		};
 	
 		function dateComparison(d1, d2) {
 			var date1 = convertDateToNumber(d1)
@@ -159,6 +157,7 @@
 		}
 		
 		function convertDataToGrid(data) {
+			// returns an array of only timestamps, not the object
 			var timestamps = data.Data.reduce((a,c,i) => {
 				c.Values.forEach(e => {
 					if (a.indexOf(e.Time) == -1) {
@@ -168,11 +167,11 @@
 				return a
 			}, [])
 			// Adds a blank line at the end.
-			timestamps.push("")
+			// timestamps.push("")
 
 			var dataGridRows = timestamps.map(item => {
 				var items = {
-					time: item,
+					timestamp: item,
 					datetime: convertDateToNumber(item)
 				}
 				data.Data.forEach((c,i) => {
@@ -194,49 +193,43 @@
 			// console.log(data)
 			if (!data) return
 			if (data.Data[0].Label) {
-				console.log("sporadic update")
-				console.log(data)
+				// console.log("sporadic update")
+				// console.log(data)
+				let oldCols = grid.getColumns().map((col,i) => {
+					return col.name
+				})
 				var cols = data.Data.map((v,i) => {
 					return {
-						headerName: v.Label, 
+						id: "value" + i, 
+						name: v.Label,
 						field: "value"+i, 
-						editable: true,
-						cellStyle: function(params) {
-							if (parseFloat(params.value) < scope.config.colorLevels[i][0]) {
-								return {
-									backgroundColor: scope.config.badBackgroundColor, 
-									color: scope.config.badTextColor
-								}
-							} else if (parseFloat(params.value) < scope.config.colorLevels[i][1]) {
-								return {
-									backgroundColor: scope.config.warningBackgroundColor,
-									color: scope.config.warningTextColor,
-								}
-							} else {
-								return {
-									backgroundColor: scope.config.backgroundColor,
-									color: scope.config.textColor,
-								}
-							}
-						},
+						formatter: statusFormatter,
+						minWidth: 80,
+						sortable: true,
 					}
 				})
 				// cols.unshift({headerName: "sortableDate", field: 'datetime'})
-				cols.unshift({
-					headerName: "Timestamp", 
-					field: 'time', 
-					comparator: dateComparison, 
-					sort: scope.config.defaultSort,
-					editable: true,
-				})
-				setTimeout(function() {gridOptions.api.setColumnDefs(cols)},0)
+				cols.unshift(getConfig()[0])
+				// console.log("column update")
+				let check = cols.map(col => col.name)
+				console.log(cols)
+				// console.log(oldCols, check)
+				if (JSON.stringify(oldCols) == JSON.stringify(check)) {
+					return
+				} else {
+					grid.setColumns(cols)
+					grid.render()
+				}
+				// setTimeout(function() {gridOptions.api.setColumnDefs(cols)},0)
 			}
 			scope.runtimeData.oldDataGridRows = scope.runtimeData.dataGridRows
 			scope.runtimeData.dataGridRows = convertDataToGrid(data)
 			if (JSON.stringify(scope.runtimeData.oldDataGridRows) == JSON.stringify(scope.runtimeData.dataGridRows)) {
 				return
 			} else {
-				setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
+				// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
+				grid.setData(scope.runtimeData.dataGridRows, false)
+				grid.render()
 			}
 		}
 
