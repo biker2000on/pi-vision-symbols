@@ -16,16 +16,10 @@
 				DataShape: 'Timeseries',
 				Height: 500,
 				Width: 800, 
-				defaultSort: 'desc',
-				warningBackgroundColor: 'lightsalmon',
-				warningTextColor: 'darkred',
-				badBackgroundColor: 'lightsalmon',
-				badTextColor: 'darkred',
-				backgroundColor: 'white',
-				textColor: 'black',
 				defaultTimestamp: '*',
 				colorLevels: [],
 				defaultColorLevel: [12,15,17,18],
+				colWidths: []
 			} 
 		},
 		configOptions: function () {
@@ -46,6 +40,7 @@
 		var container = elem.find('#grid')[0]
 		container.id = 'grid_' + scope.symbol.Name
 		this.onDataUpdate = dataUpdate
+		this.onConfigChange = configChange
 
 		function statusFormatter(row, cell, value, columnDef, dataContext) {
 			var rtn = { text: value, removeClasses: 'red orange green' };
@@ -70,40 +65,61 @@
 		}
 		
 		var columns = getConfig()
-		// console.log(columns)
+
 		var options = {
 			enableCellNavigation: true,
 			enableColumnReorder: false,
 			enableAddRow: true,
+			// multiColumnSort: true,
 		};
-		// console.log(options)
-		let data = []
-		data[0] = {timestamp: Date.now()}
-		data[1] = {timestamp: Date.now()}
-		// console.log(data)
-		let grid = new Slick.Grid(container, data, columns, options);
-		// var columns = [
-		// 	{id: "title", name: "Title", field: "title"},
-		// 	{id: "duration", name: "Duration", field: "duration"},
-		// 	{id: "%", name: "% Complete", field: "percentComplete", width: 80, resizable: false, formatter: statusFormatter},
-		// 	{id: "start", name: "Start", field: "start"},
-		// 	{id: "finish", name: "Finish", field: "finish"},
-		// 	{id: "effort-driven", name: "Effort Driven", field: "effortDriven", formatter: Slick.Formatters.Checkmark}
-		// ];
-		// $(function () {
-		// 	var data = [];
-		// 	for (var i = 0; i < 500; i++) {
-		// 		data[i] = {
-		// 			title: "Task " + i,
-		// 			duration: "5 days",
-		// 			percentComplete: Math.round(Math.random() * 100),
-		// 			start: "01/01/2009",
-		// 			finish: "01/05/2009",
-		// 			effortDriven: (i % 5 == 0)
-		// 		};
-		// 	}
 
+		// var dataView = new Slick.Data.DataView();
+		let datum = []
+		datum[0] = {timestamp: Date.now()}
+		datum[1] = {timestamp: Date.now()}
+		// dataView.setItems(datum)
+
+		let grid = new Slick.Grid(container, datum, columns, options);
+
+		grid.onSort.subscribe(function (e, args) {
+			// console.log(e, args)
+			var col = args.sortCol;
+			scope.runtimeData.sign = args.sortAsc ? 1 : -1
+			scope.runtimeData.sortedCol = args.sortCol
+      scope.runtimeData.dataGridRows.sort(function (dataRow1, dataRow2) {
+				var field = scope.runtimeData.sortedCol.field;
+				if (field == "timestamp") {
+					var value1 = convertDateToNumber(dataRow1[field])
+					var value2 = convertDateToNumber(dataRow2[field])
+				} else {
+					var value1 = dataRow1[field], value2 = dataRow2[field];
+				}
+				var result = (value1 == value2 ? 0 : (value1 > value2 ? 1 : -1)) * scope.runtimeData.sign;
+				if (result != 0) {
+					return result;
+				}
+				return 0;
+			});
+			grid.invalidate();
+			grid.setData(scope.runtimeData.dataGridRows)
+      grid.render();
+    });
 				
+		grid.onColumnsResized.subscribe(function (e, args) {
+			//Loop through columns
+			let cols = grid.getColumns()
+			for(var i = 0; i < cols.length; i++){
+				var column = cols[i];
+				//Check if column width has changed
+				if (column.width != column.previousWidth){
+					//Found a changed column - there may be multiple so all columns must be checked
+					scope.config.colWidths[i] = column.width
+					console.log('Changed column index : ' + i);
+					console.log(column);    
+				}
+			}
+		}); 
+
 		// Scope setup
 		if (scope.config.colorLevels == false) {
 			scope.config.colorLevels = scope.symbol.DataSources.map(function(c) {
@@ -114,14 +130,15 @@
 		getStreams(scope.symbol.DataSources).then(function(streams){
 			scope.runtimeData.streamList = streams;
 			scope.config.streamFriendlyNames =  scope.config.streamFriendlyNames.length > 0 ? scope.config.streamFriendlyNames : getFriendlyNameList(scope.runtimeData.streamList);
+			scope.config.headers = scope.config.streamFriendlyNames
+			console.log("headers: ", scope.config.headers)
 		});
 
 		function getConfig() {
 			let columns = [
-				{id: 'timestamp', name: 'Datetime', field: 'timestamp'},
+				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true},
 				// {id: "sortableDate", name: 'Sortable Date', field: 'sortableDate'},
 			]
-			console.log(columns)
 			return columns
 		};
 	
@@ -198,21 +215,38 @@
 				let oldCols = grid.getColumns().map((col,i) => {
 					return col.name
 				})
-				var cols = data.Data.map((v,i) => {
-					return {
-						id: "value" + i, 
-						name: v.Label,
-						field: "value"+i, 
-						formatter: statusFormatter,
-						minWidth: 80,
-						sortable: true,
-					}
-				})
+				if (scope.config.headers && scope.config.colWidths.length != 0) {
+					var cols = data.Data.map((v,i) => {
+						return {
+							id: "value" + i, 
+							name: scope.config.headers[i],
+							field: "value"+i, 
+							formatter: statusFormatter,
+							minWidth: 80,
+							sortable: true,
+							width: scope.config.colWidths[i+1]
+						}
+					})
+				} else {
+					var cols = data.Data.map((v,i) => {
+						return {
+							id: "value" + i, 
+							name: v.Label,
+							field: "value"+i, 
+							formatter: statusFormatter,
+							minWidth: 80,
+							sortable: true,
+						}
+					})
+				}
 				// cols.unshift({headerName: "sortableDate", field: 'datetime'})
 				cols.unshift(getConfig()[0])
+				if (scope.config.colWidths.length != 0) {
+					cols[0].width = scope.config.colWidths[0]
+				}
 				// console.log("column update")
 				let check = cols.map(col => col.name)
-				console.log(cols)
+				// console.log(cols)
 				// console.log(oldCols, check)
 				if (JSON.stringify(oldCols) == JSON.stringify(check)) {
 					return
@@ -222,9 +256,29 @@
 				}
 				// setTimeout(function() {gridOptions.api.setColumnDefs(cols)},0)
 			}
+
+			
 			scope.runtimeData.oldDataGridRows = scope.runtimeData.dataGridRows
 			scope.runtimeData.dataGridRows = convertDataToGrid(data)
-			if (JSON.stringify(scope.runtimeData.oldDataGridRows) == JSON.stringify(scope.runtimeData.dataGridRows)) {
+			if (scope.runtimeData.sortedCol) {
+				scope.runtimeData.sortedDataGridRows = scope.runtimeData.dataGridRows.sort(function (dataRow1, dataRow2) {
+					var field = scope.runtimeData.sortedCol.field;
+					if (field == "timestamp") {
+						var value1 = convertDateToNumber(dataRow1[field])
+						var value2 = convertDateToNumber(dataRow2[field])
+					} else {
+						var value1 = dataRow1[field], value2 = dataRow2[field];
+					}
+					var result = (value1 == value2 ? 0 : (value1 > value2 ? 1 : -1)) * scope.runtimeData.sign;
+					if (result != 0) {
+						return result;
+					}
+					return 0;
+				})
+			} else {
+				scope.runtimeData.sortedDataGridRows = scope.runtimeData.dataGridRows
+			}
+			if (JSON.stringify(scope.runtimeData.oldDataGridRows) == JSON.stringify(scope.runtimeData.sortedDataGridRows)) {
 				return
 			} else {
 				// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
@@ -254,10 +308,9 @@
 		scope.isAllSelected = false;
 		scope.isBtnEnabled = false;
 		scope.config.DataSources = scope.symbol.DataSources;
-
-		this.onConfigChange = configChange;
 		
 		function configChange(newConfig, oldConfig) {
+			console.log(newConfig, oldConfig)
 			if (newConfig && oldConfig && !angular.equals(newConfig, oldConfig)) {			
 				var newdatasoucres = _.difference(newConfig.DataSources, oldConfig.DataSources);
 				if(newdatasoucres.length > 0){
@@ -271,9 +324,30 @@
 							// drag & drop of a new stream
 							scope.runtimeData.streamList = scope.runtimeData.streamList.concat(newstreams);	
 							scope.config.streamFriendlyNames = scope.config.streamFriendlyNames.concat(newNames);
+							scope.config.headers = scope.config.headers.concat(newNames)
 						}
 					});					
 				}
+				let cols = grid.getColumns()
+				if (!angular.equals(newConfig.colorLevels, oldConfig.colorLevels)) {
+					console.log(cols)
+					for (let i = 1; i < cols.length; i++) {
+						console.log(i)
+						if (cols[i].formatter && cols[i]) {
+							cols[i].formatter = statusFormatter
+						}
+					}
+				}
+				if (!angular.equals(newConfig.headers, oldConfig.headers)) {
+					for (let i = 1; i < cols.length; i++) {
+						if (cols[i].name) {
+							console.log(scope.config.headers[i-1])
+							cols[i].name = scope.config.headers[i-1]
+						}
+					}
+				}
+				grid.invalidate()
+				grid.render()
 			}
 		}
 
