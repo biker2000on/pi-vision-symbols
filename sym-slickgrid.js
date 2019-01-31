@@ -83,24 +83,27 @@
 		let grid = new Slick.Grid(container, datum, columns, options);
 
 		grid.setSelectionModel(new Slick.CellSelectionModel());
+    grid.registerPlugin(new Slick.AutoTooltips());
+    // set keyboard focus on the grid
+    grid.getCanvasNode().focus();
+    grid.registerPlugin(new Slick.CellExternalCopyManager(pluginOptions));
 
     grid.onAddNewRow.subscribe(function (e, args) {
 			// add logic for checking if timestamp column or other colums and submit any column change not timestamp
 			console.log("new row")
 			console.log(e, args)
-			var item = args.item;
-			if (item.timestamp) {
-				scope.runtimeData.dataGridRows.push(item);
-				grid.setData(scope.runtimeData.dataGridRows, false)
-				grid.render();
-			} else {
-				//grid.invalidateRow(scope.runtimeData.dataGridRows.length);
-				//submit data to PI
-				scope.runtimeData.dataGridRows.push(item);
-				grid.setData(scope.runtimeData.dataGridRows, false)
-				//grid.updateRowCount();
-				grid.render();
-			}
+			scope.runtimeData.item = args.item;
+			//grid.invalidateRow(scope.runtimeData.dataGridRows.length);
+			//submit data to PI
+			scope.runtimeData.dataGridRows.push(scope.runtimeData.item);
+			grid.setData(scope.runtimeData.dataGridRows, false)
+			//grid.updateRowCount();
+			grid.render();
+
+			//extra 
+			// scope.runtimeData.dataGridRows.push(item);
+			// grid.setData(scope.runtimeData.dataGridRows, false)
+			// grid.render();
     });
 
 		grid.onSort.subscribe(function (e, args) {
@@ -148,6 +151,59 @@
 			}
 		}
 
+		// Undo Redo implementation
+		var undoRedoBuffer = {
+      commandQueue : [],
+      commandCtr : 0,
+      queueAndExecuteCommand : function(editCommand) {
+        this.commandQueue[this.commandCtr] = editCommand;
+        this.commandCtr++;
+        editCommand.execute();
+      },
+      undo : function() {
+        if (this.commandCtr == 0) { return; }
+        this.commandCtr--;
+        var command = this.commandQueue[this.commandCtr];
+        if (command && Slick.GlobalEditorLock.cancelCurrentEdit()) {
+          command.undo();
+        }
+      },
+      redo : function() {
+        if (this.commandCtr >= this.commandQueue.length) { return; }
+        var command = this.commandQueue[this.commandCtr];
+        this.commandCtr++;
+        if (command && Slick.GlobalEditorLock.cancelCurrentEdit()) {
+          command.execute();
+        }
+      }
+		}
+		// undo shortcut
+		$(document).keydown(function(e)
+		{
+			if (e.which == 90 && (e.ctrlKey || e.metaKey)) {    // CTRL + (shift) + Z
+				if (e.shiftKey){
+					undoRedoBuffer.redo();
+				} else {
+					undoRedoBuffer.undo();
+				}
+			}
+		});
+		var newRowIds = 0;
+
+		var pluginOptions = {
+			clipboardCommandHandler: function(editCommand){ undoRedoBuffer.queueAndExecuteCommand.call(undoRedoBuffer,editCommand); },
+			readOnlyMode : false,
+			includeHeaderWhenCopying : false,
+			newRowCreator: function(count) {
+				for (var i = 0; i < count; i++) {
+					var item = {
+						id: "newRow_" + newRowIds++
+					}
+					grid.getData().addItem(item);
+				}
+			}
+		};
+
 		// Scope setup
 		if (scope.config.colorLevels == false) {
 			scope.config.colorLevels = scope.symbol.DataSources.map(function(c) {
@@ -158,8 +214,8 @@
 		getStreams(scope.symbol.DataSources).then(function(streams){
 			scope.runtimeData.streamList = streams;
 			scope.config.streamFriendlyNames =  scope.config.streamFriendlyNames.length > 0 ? scope.config.streamFriendlyNames : getFriendlyNameList(scope.runtimeData.streamList);
-			scope.config.headers = scope.config.streamFriendlyNames
-			console.log("headers: ", scope.config.headers)
+			// scope.config.headers = scope.config.streamFriendlyNames
+			// console.log("headers: ", scope.config.headers)
 		});
 
 		function getConfig() {
@@ -168,15 +224,6 @@
 			]
 			return columns
 		};
-	
-		function dateComparison(d1, d2) {
-			var date1 = convertDateToNumber(d1)
-			var date2 = convertDateToNumber(d2)
-			if (date1 === null && date2 === null) return 0
-			if (date1 === null) return -1
-			if (date2 === null) return 10000000000000000000000000
-			return date2 - date1
-		}
 		
 		function convertDateToNumber(date) {
 			// this function converts the string date into an integer that can be compared to each 
@@ -307,9 +354,13 @@
 			} else {
 				scope.runtimeData.sortedDataGridRows = scope.runtimeData.dataGridRows
 			}
-			if (JSON.stringify(scope.runtimeData.oldDataGridRows) == JSON.stringify(scope.runtimeData.sortedDataGridRows)) {
+			if (angular.equals(scope.runtimeData.oldDataGridRows, scope.runtimeData.sortedDataGridRows)) {
 				return
 			} else {
+				scope.runtimeData.sortedDataGridRows.push(scope.runtimeData.item)
+				if (angular.equals(scope.runtimeData.oldDataGridRows, scope.runtimeData.sortedDataGridRows)) {
+					return
+				}
 				// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
 				grid.setData(scope.runtimeData.dataGridRows, false)
 				grid.render()
