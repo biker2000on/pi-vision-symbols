@@ -89,10 +89,18 @@
 			console.log("new row")
 			console.log(e, args)
 			var item = args.item;
-      grid.invalidateRow(scope.runtimeData.dataGridRows.length);
-      scope.runtimeData.dataGridRows.push(item);
-      grid.updateRowCount();
-      grid.render();
+			if (item.timestamp) {
+				scope.runtimeData.dataGridRows.push(item);
+				grid.setData(scope.runtimeData.dataGridRows, false)
+				grid.render();
+			} else {
+				//grid.invalidateRow(scope.runtimeData.dataGridRows.length);
+				//submit data to PI
+				scope.runtimeData.dataGridRows.push(item);
+				grid.setData(scope.runtimeData.dataGridRows, false)
+				//grid.updateRowCount();
+				grid.render();
+			}
     });
 
 		grid.onSort.subscribe(function (e, args) {
