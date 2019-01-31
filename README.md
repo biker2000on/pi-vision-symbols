@@ -5,10 +5,10 @@ All of these extensions are written for Ingevity, but are released for public us
 ## Left remaining on SlickGrid
 
 <!-- * change naming from config -->
-* edit functionality
+* edit functionality (still needs submission to PI)
 * datetime editor for timestamp
 * editor dependent on tag type
-* excel copy/paste functionality
+* excel copy/paste functionality (requires copy/paste to be disabled on display)
 <!-- * update colors when config changes -->
 <!-- * update headers when config changes -->
 <!-- * column width in config -->
