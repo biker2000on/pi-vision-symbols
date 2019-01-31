@@ -70,14 +70,11 @@
 			enableCellNavigation: true,
 			enableColumnReorder: false,
 			enableAddRow: true,
-			// multiColumnSort: true,
 		};
 
-		// var dataView = new Slick.Data.DataView();
 		let datum = []
 		datum[0] = {timestamp: Date.now()}
 		datum[1] = {timestamp: Date.now()}
-		// dataView.setItems(datum)
 
 		let grid = new Slick.Grid(container, datum, columns, options);
 
@@ -114,8 +111,6 @@
 				if (column.width != column.previousWidth){
 					//Found a changed column - there may be multiple so all columns must be checked
 					scope.config.colWidths[i] = column.width
-					console.log('Changed column index : ' + i);
-					console.log(column);    
 				}
 			}
 		}); 
@@ -137,7 +132,6 @@
 		function getConfig() {
 			let columns = [
 				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true},
-				// {id: "sortableDate", name: 'Sortable Date', field: 'sortableDate'},
 			]
 			return columns
 		};
@@ -169,7 +163,6 @@
 			var seconds =  date.slice(-5, -3)
 			var sortableDate = (year * 10000000000 + month * 100000000 + day * 1000000 + 
 													hour * 10000 + minute * 100 + seconds) / 100
-			// console.log(sortableDate)
 			return sortableDate
 		}
 		
@@ -183,8 +176,6 @@
 				});
 				return a
 			}, [])
-			// Adds a blank line at the end.
-			// timestamps.push("")
 
 			var dataGridRows = timestamps.map(item => {
 				var items = {
