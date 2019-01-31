@@ -41,6 +41,7 @@
 		container.id = 'grid_' + scope.symbol.Name
 		this.onDataUpdate = dataUpdate
 		this.onConfigChange = configChange
+		let j = 0
 
 		function statusFormatter(row, cell, value, columnDef, dataContext) {
 			var rtn = { text: value, removeClasses: 'red orange green' };
@@ -67,9 +68,12 @@
 		var columns = getConfig()
 
 		var options = {
+			editable: true,
 			enableCellNavigation: true,
 			enableColumnReorder: false,
 			enableAddRow: true,
+			asyncEditorLoading: false,
+			autoEdit: false,
 		};
 
 		let datum = []
@@ -77,6 +81,19 @@
 		datum[1] = {timestamp: Date.now()}
 
 		let grid = new Slick.Grid(container, datum, columns, options);
+
+		grid.setSelectionModel(new Slick.CellSelectionModel());
+
+    grid.onAddNewRow.subscribe(function (e, args) {
+			// add logic for checking if timestamp column or other colums and submit any column change not timestamp
+			console.log("new row")
+			console.log(e, args)
+			var item = args.item;
+      grid.invalidateRow(scope.runtimeData.dataGridRows.length);
+      scope.runtimeData.dataGridRows.push(item);
+      grid.updateRowCount();
+      grid.render();
+    });
 
 		grid.onSort.subscribe(function (e, args) {
 			// console.log(e, args)
@@ -115,6 +132,14 @@
 			}
 		}); 
 
+		function requiredFieldValidator(value) {
+			if (value == null || value == undefined || !value.length) {
+				return {valid: false, msg: "This is a required field"};
+			} else {
+				return {valid: true, msg: null};
+			}
+		}
+
 		// Scope setup
 		if (scope.config.colorLevels == false) {
 			scope.config.colorLevels = scope.symbol.DataSources.map(function(c) {
@@ -131,7 +156,7 @@
 
 		function getConfig() {
 			let columns = [
-				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true},
+				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true, editor: Slick.Editors.Text},
 			]
 			return columns
 		};
@@ -199,6 +224,7 @@
 		
 		function dataUpdate(data) {
 			// console.log(data)
+			j++
 			if (!data) return
 			if (data.Data[0].Label) {
 				// console.log("sporadic update")
@@ -215,11 +241,13 @@
 							formatter: statusFormatter,
 							minWidth: 80,
 							sortable: true,
-							width: scope.config.colWidths[i+1]
+							width: scope.config.colWidths[i+1],
+							editor: Slick.Editors.Float,
 						}
 					})
 				} else {
 					var cols = data.Data.map((v,i) => {
+						scope.config.headers[i] = v.Label
 						return {
 							id: "value" + i, 
 							name: v.Label,
@@ -227,6 +255,7 @@
 							formatter: statusFormatter,
 							minWidth: 80,
 							sortable: true,
+							editor: Slick.Editors.Float,
 						}
 					})
 				}
@@ -244,6 +273,7 @@
 				} else {
 					grid.setColumns(cols)
 					grid.render()
+					console.log("Updated Columns on the following data update: ", j)
 				}
 				// setTimeout(function() {gridOptions.api.setColumnDefs(cols)},0)
 			}
@@ -275,6 +305,7 @@
 				// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
 				grid.setData(scope.runtimeData.dataGridRows, false)
 				grid.render()
+				console.log("I updated data on this data update: ", j)
 			}
 		}
 
@@ -301,7 +332,7 @@
 		scope.config.DataSources = scope.symbol.DataSources;
 		
 		function configChange(newConfig, oldConfig) {
-			console.log(newConfig, oldConfig)
+			// console.log(newConfig, oldConfig)
 			if (newConfig && oldConfig && !angular.equals(newConfig, oldConfig)) {			
 				var newdatasoucres = _.difference(newConfig.DataSources, oldConfig.DataSources);
 				if(newdatasoucres.length > 0){
