@@ -19,7 +19,10 @@
 				defaultTimestamp: '*',
 				colorLevels: [],
 				defaultColorLevel: [12,15,17,18],
-				colWidths: []
+				colWidths: [],
+				// good: "#aaffaa",
+				// warning: "#ff7777",
+				// alarm: "#ffbb66",
 			} 
 		},
 		configOptions: function () {
@@ -143,66 +146,66 @@
 			}
 		}); 
 
-		function requiredFieldValidator(value) {
-			if (value == null || value == undefined || !value.length) {
-				return {valid: false, msg: "This is a required field"};
-			} else {
-				return {valid: true, msg: null};
-			}
-		}
+		// function requiredFieldValidator(value) {
+		// 	if (value == null || value == undefined || !value.length) {
+		// 		return {valid: false, msg: "This is a required field"};
+		// 	} else {
+		// 		return {valid: true, msg: null};
+		// 	}
+		// }
 
 		// Undo Redo implementation
-		var undoRedoBuffer = {
-      commandQueue : [],
-      commandCtr : 0,
-      queueAndExecuteCommand : function(editCommand) {
-        this.commandQueue[this.commandCtr] = editCommand;
-        this.commandCtr++;
-        editCommand.execute();
-      },
-      undo : function() {
-        if (this.commandCtr == 0) { return; }
-        this.commandCtr--;
-        var command = this.commandQueue[this.commandCtr];
-        if (command && Slick.GlobalEditorLock.cancelCurrentEdit()) {
-          command.undo();
-        }
-      },
-      redo : function() {
-        if (this.commandCtr >= this.commandQueue.length) { return; }
-        var command = this.commandQueue[this.commandCtr];
-        this.commandCtr++;
-        if (command && Slick.GlobalEditorLock.cancelCurrentEdit()) {
-          command.execute();
-        }
-      }
-		}
-		// undo shortcut
-		$(document).keydown(function(e)
-		{
-			if (e.which == 90 && (e.ctrlKey || e.metaKey)) {    // CTRL + (shift) + Z
-				if (e.shiftKey){
-					undoRedoBuffer.redo();
-				} else {
-					undoRedoBuffer.undo();
-				}
-			}
-		});
-		var newRowIds = 0;
+		// var undoRedoBuffer = {
+    //   commandQueue : [],
+    //   commandCtr : 0,
+    //   queueAndExecuteCommand : function(editCommand) {
+    //     this.commandQueue[this.commandCtr] = editCommand;
+    //     this.commandCtr++;
+    //     editCommand.execute();
+    //   },
+    //   undo : function() {
+    //     if (this.commandCtr == 0) { return; }
+    //     this.commandCtr--;
+    //     var command = this.commandQueue[this.commandCtr];
+    //     if (command && Slick.GlobalEditorLock.cancelCurrentEdit()) {
+    //       command.undo();
+    //     }
+    //   },
+    //   redo : function() {
+    //     if (this.commandCtr >= this.commandQueue.length) { return; }
+    //     var command = this.commandQueue[this.commandCtr];
+    //     this.commandCtr++;
+    //     if (command && Slick.GlobalEditorLock.cancelCurrentEdit()) {
+    //       command.execute();
+    //     }
+    //   }
+		// }
+		// // undo shortcut
+		// $(document).keydown(function(e)
+		// {
+		// 	if (e.which == 90 && (e.ctrlKey || e.metaKey)) {    // CTRL + (shift) + Z
+		// 		if (e.shiftKey){
+		// 			undoRedoBuffer.redo();
+		// 		} else {
+		// 			undoRedoBuffer.undo();
+		// 		}
+		// 	}
+		// });
+		// var newRowIds = 0;
 
-		var pluginOptions = {
-			clipboardCommandHandler: function(editCommand){ undoRedoBuffer.queueAndExecuteCommand.call(undoRedoBuffer,editCommand); },
-			readOnlyMode : false,
-			includeHeaderWhenCopying : false,
-			newRowCreator: function(count) {
-				for (var i = 0; i < count; i++) {
-					var item = {
-						id: "newRow_" + newRowIds++
-					}
-					grid.getData().addItem(item);
-				}
-			}
-		};
+		// var pluginOptions = {
+		// 	clipboardCommandHandler: function(editCommand){ undoRedoBuffer.queueAndExecuteCommand.call(undoRedoBuffer,editCommand); },
+		// 	readOnlyMode : false,
+		// 	includeHeaderWhenCopying : false,
+		// 	newRowCreator: function(count) {
+		// 		for (var i = 0; i < count; i++) {
+		// 			var item = {
+		// 				id: "newRow_" + newRowIds++
+		// 			}
+		// 			grid.getData().addItem(item);
+		// 		}
+		// 	}
+		// };
 
 		// Scope setup
 		if (scope.config.colorLevels == false) {

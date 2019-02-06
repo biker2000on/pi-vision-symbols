@@ -9,6 +9,7 @@ All of these extensions are written for Ingevity, but are released for public us
 * datetime editor for timestamp
 * editor dependent on tag type
 * excel copy/paste functionality (requires copy/paste to be disabled on display)
+* add new row doesn't automatically put cursor in editor...
 <!-- * update colors when config changes -->
 <!-- * update headers when config changes -->
 <!-- * column width in config -->
