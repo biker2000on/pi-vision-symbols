@@ -15,14 +15,14 @@
 			return { 
 				DataShape: 'Timeseries',
 				Height: 500,
-				Width: 800, 
+				Width: 500, 
 				defaultTimestamp: '*',
 				colorLevels: [],
 				defaultColorLevel: [12,15,17,18],
 				colWidths: [],
-				good: "green",
-				warning: "orange",
-				alarm: "red",
+				good: "#aaffaa",
+				warning: "#ffbb66",
+				alarm: "#ff7777",
 			} 
 		},
 		configOptions: function () {
@@ -161,6 +161,10 @@
 				// send data object to PIWebAPI
 				sendValues(args.cell - 1, time, value)
 				console.log("sent values " + time + "   " + value)
+				// reset undefined item definition
+				scope.runtimeData.item = false
+				console.log(scope.runtimeData.item)
+				//force refresh of data grid
 				scope.$root.$broadcast('refreshDataForChangedSymbols')
 			}
 		})
@@ -189,7 +193,7 @@
 
 		function getConfig() {
 			let columns = [
-				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true, editor: PIDatetimeTextEditor},
+				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true, editor: Slick.Editors.Text},
 			]
 			return columns
 		};
@@ -341,6 +345,7 @@
 			}
 			if (angular.equals(scope.runtimeData.oldDataGridRows,scope.runtimeData.sortedDataGridRows) && Boolean(scope.runtimeData.item)) {
 				console.log("Inside extra row")
+				console.log(scope.runtimeData.item)
 				console.log(scope.runtimeData.item, Boolean(scope.runtimeData.item))
 				return
 			}
