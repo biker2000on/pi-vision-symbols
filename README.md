@@ -6,7 +6,7 @@ All of these extensions are written for Ingevity, but are released for public us
 
 <!-- * change naming from config -->
 * edit functionality
-* datetime editor for timestamp
+<!-- * datetime editor for timestamp -->
 * editor dependent on tag type
 * excel copy/paste functionality
 <!-- * update colors when config changes -->

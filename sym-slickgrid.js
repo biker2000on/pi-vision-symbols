@@ -19,7 +19,10 @@
 				defaultTimestamp: '*',
 				colorLevels: [],
 				defaultColorLevel: [12,15,17,18],
-				colWidths: []
+				colWidths: [],
+				good: "green",
+				warning: "orange",
+				alarm: "red",
 			} 
 		},
 		configOptions: function () {
@@ -89,6 +92,7 @@
 			console.log("new row")
 			console.log(e, args)
 			var item = args.item;
+			scope.runtimeData.item = item
 			if (item.timestamp) {
 				scope.runtimeData.dataGridRows.push(item);
 				grid.setData(scope.runtimeData.dataGridRows, false)
@@ -140,13 +144,34 @@
 			}
 		}); 
 
-		function requiredFieldValidator(value) {
-			if (value == null || value == undefined || !value.length) {
-				return {valid: false, msg: "This is a required field"};
-			} else {
-				return {valid: true, msg: null};
+		grid.onCellChange.subscribe(function (e,args) {
+			console.log(e,args)
+			// args.item.cell = index of row that was edited
+			// args.item.<field> = value that was changed. Can be found by args.item.cell
+			// submit changes to PI here.
+			// value0 slice(5)
+			var time = args.item.timestamp
+			if (args.cell) { // returns true if value is not the timestamp column
+				getStreams(scope.config.DataSources)
+				var editedField = "value" + (args.cell - 1)
+				var value = args.item[editedField]
+				console.log(editedField, args.item[editedField])
+				// sendValues takes (index, time, value)
+				// build data object to send to PIWebAPI
+				// send data object to PIWebAPI
+				sendValues(args.cell - 1, time, value)
+				console.log("sent values " + time + "   " + value)
+				scope.$root.$broadcast('refreshDataForChangedSymbols')
 			}
-		}
+		})
+
+		// function requiredFieldValidator(value) {
+		// 	if (value == null || value == undefined || !value.length) {
+		// 		return {valid: false, msg: "This is a required field"};
+		// 	} else {
+		// 		return {valid: true, msg: null};
+		// 	}
+		// }
 
 		// Scope setup
 		if (scope.config.colorLevels == false) {
@@ -164,7 +189,7 @@
 
 		function getConfig() {
 			let columns = [
-				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true, editor: Slick.Editors.Text},
+				{id: 'timestamp', name: 'Datetime', field: 'timestamp', sortable: true, editor: PIDatetimeTextEditor},
 			]
 			return columns
 		};
@@ -307,15 +332,137 @@
 			} else {
 				scope.runtimeData.sortedDataGridRows = scope.runtimeData.dataGridRows
 			}
-			if (JSON.stringify(scope.runtimeData.oldDataGridRows) == JSON.stringify(scope.runtimeData.sortedDataGridRows)) {
+			if (angular.equals(scope.runtimeData.oldDataGridRows,scope.runtimeData.sortedDataGridRows)) {
+				console.log("inside sorted")
 				return
-			} else {
-				// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
-				grid.setData(scope.runtimeData.dataGridRows, false)
-				grid.render()
-				console.log("I updated data on this data update: ", j)
+			} 
+			if (scope.runtimeData.item) {
+				scope.runtimeData.sortedDataGridRows.push(scope.runtimeData.item)
+			}
+			if (angular.equals(scope.runtimeData.oldDataGridRows,scope.runtimeData.sortedDataGridRows) && Boolean(scope.runtimeData.item)) {
+				console.log("Inside extra row")
+				console.log(scope.runtimeData.item, Boolean(scope.runtimeData.item))
+				return
+			}
+			// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
+			grid.setData(scope.runtimeData.dataGridRows, false)
+			grid.render()
+			console.log("I updated data on this data update: ", j)
+		}
+
+		//Editor for writing data
+		function PIDatetimeTextEditor(args) {
+			var $input;
+			var defaultValue;
+			var scope = this;
+			var dateVal
+			var tzoffset = (new Date()).getTimezoneOffset() * 60000;
+			var now = new Date(new Date() - tzoffset).toISOString().slice(0,-1)
+	
+			this.init = function () {
+				console.log(now, tzoffset)
+				var editField = args.column.field
+				var originalVal = args.item[editField]
+				if (originalVal) {
+					dateVal = new Date(new Date(originalVal) - tzoffset).toISOString().slice(0, -1)
+					// dateVal = new Date(originalVal).toISOString().slice(0,19)
+				}
+				console.log(originalVal)
+				console.log(dateVal)
+				var navOnLR = args.grid.getOptions().editorCellNavOnLRKeys;
+				$input = $("<INPUT type=datetime-local class='editor-text' />")
+						.appendTo(args.container)
+						.on("keydown.nav", navOnLR ? handleKeydownLRNav : handleKeydownLRNoNav)
+						.focus()
+						.select();
+			};
+	
+			this.destroy = function () {
+				$input.remove();
+			};
+	
+			this.focus = function () {
+				$input.focus();
+			};
+	
+			this.getValue = function () {
+				return $input.val();
+			};
+	
+			this.setValue = function (val) {
+				$input.val(val);
+			};
+	
+			this.loadValue = function (item) {
+				// console.log(Date.now())
+				defaultValue = dateVal || now // || item[args.column.field];
+				$input.val(defaultValue);
+				$input[0].defaultValue = defaultValue;
+				$input.select();
+			};
+	
+			this.serializeValue = function () {
+				console.log("In Serialize")
+				console.log($input.val())
+				return $input.val();
+			};
+	
+			this.applyValue = function (item, state) {
+				console.log("IN Apply")
+				console.log(item, state)
+				var year = state.slice(0,4)
+				var month = state.slice(5,7)
+				var day = state.slice(8,10)
+				var hour = state.slice(11,13)
+				var displayHour = hour < 12 ? hour : hour - 12
+				if (displayHour == 0) {displayHour = 12}
+				var min = state.slice(14,16)
+				var ampm = hour < 12 ? "AM" : "PM"
+				console.log(year, month, day, hour, min, ampm)
+				item[args.column.field] = month + "/" + day + "/" + year + " " + displayHour + ":" + min + ":00 " + ampm;
+			};
+	
+			this.isValueChanged = function () {
+				return (!($input.val() == "" && defaultValue == null)) && ($input.val() != defaultValue);
+			};
+	
+			this.validate = function () {
+				if (args.column.validator) {
+					var validationResults = args.column.validator($input.val());
+					if (!validationResults.valid) {
+						return validationResults;
+					}
+				}
+	
+				return {
+					valid: true,
+					msg: null
+				};
+			};
+	
+			this.init();
+		}
+
+		function handleKeydownLRNav(e) {
+			var cursorPosition = this.selectionStart;
+			var textLength = this.value.length;
+			if ((e.keyCode === $.ui.keyCode.LEFT && cursorPosition > 0) ||
+					 e.keyCode === $.ui.keyCode.RIGHT && cursorPosition < textLength-1) {
+				e.stopImmediatePropagation();
 			}
 		}
+	
+		function handleKeydownLRNoNav(e) {
+			if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {	
+				e.stopImmediatePropagation();	
+			}	
+		}
+
+		Date.prototype.toDateInputValue = (function() {
+			var local = new Date(this);
+			local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+			return local.toJSON().slice(0,10);
+		});
 
 
 		// Below here is copy and pasted from sym-sendvalue.js
