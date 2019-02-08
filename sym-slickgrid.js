@@ -39,6 +39,7 @@
 	}
 
 	var grid
+	var start
 	var baseUrl = PV.ClientSettings.PIWebAPIUrl.replace(/\/?$/, '/'); //Example: "https://server.domain.com/piwebapi/";
 	// console.log(baseUrl)	
 	
@@ -80,15 +81,16 @@
 			enableColumnReorder: false,
 			enableAddRow: true,
 			asyncEditorLoading: false,
-			autoEdit: false,
+			autoEdit: true,
 		};
 
 		let datum = []
-		datum[0] = {timestamp: Date.now()}
-		datum[1] = {timestamp: Date.now()}
+		datum[0] = {timestamp: "1/1/2019 12:00:00 AM"}
+		datum[1] = {timestamp: "1/2/2019 12:00:00 AM"}
+		scope.runtimeData.dataGridRows = datum
 
 		grid = new Slick.Grid(container, datum, columns, options);
-
+		grid.setSortColumn("timestamp", true)
 		grid.setSelectionModel(new Slick.CellSelectionModel());
 
     grid.onAddNewRow.subscribe(function (e, args) {
@@ -111,11 +113,11 @@
 			}
     });
 
-		grid.onSort.subscribe(function (e, args) {
-			// console.log(e, args)
-			var col = args.sortCol;
-			scope.runtimeData.sign = args.sortAsc ? 1 : -1
-			scope.runtimeData.sortedCol = args.sortCol
+		function gridSorter(sortCol, sortAsc) {
+			console.log("called grid sorter")
+			var col = sortCol;
+			scope.runtimeData.sign = sortAsc ? 1 : -1
+			scope.runtimeData.sortedCol = sortCol
       scope.runtimeData.dataGridRows.sort(function (dataRow1, dataRow2) {
 				var field = scope.runtimeData.sortedCol.field;
 				if (field == "timestamp") {
@@ -133,6 +135,30 @@
 			grid.invalidate();
 			grid.setData(scope.runtimeData.dataGridRows)
       grid.render();
+		}
+
+		grid.onSort.subscribe(function (e, args) {
+			// console.log(e, args)
+			gridSorter(args.sortCol, args.sortAsc)
+			// scope.runtimeData.sign = args.sortAsc ? 1 : -1
+			// scope.runtimeData.sortedCol = args.sortCol
+      // scope.runtimeData.dataGridRows.sort(function (dataRow1, dataRow2) {
+			// 	var field = scope.runtimeData.sortedCol.field;
+			// 	if (field == "timestamp") {
+			// 		var value1 = convertDateToNumber(dataRow1[field])
+			// 		var value2 = convertDateToNumber(dataRow2[field])
+			// 	} else {
+			// 		var value1 = dataRow1[field], value2 = dataRow2[field];
+			// 	}
+			// 	var result = (value1 == value2 ? 0 : (value1 > value2 ? 1 : -1)) * scope.runtimeData.sign;
+			// 	if (result != 0) {
+			// 		return result;
+			// 	}
+			// 	return 0;
+			// });
+			// grid.invalidate();
+			// grid.setData(scope.runtimeData.dataGridRows)
+      // grid.render();
     });
 				
 		grid.onColumnsResized.subscribe(function (e, args) {
@@ -149,27 +175,19 @@
 		}); 
 
 		grid.onCellChange.subscribe(function (e,args) {
-			console.log(e,args)
-			// args.item.cell = index of row that was edited
-			// args.item.<field> = value that was changed. Can be found by args.item.cell
+			// console.log(e,args)
 			// submit changes to PI here.
-			// value0 slice(5)
 			var time = args.item.timestamp
 			if (args.cell) { // returns true if value is not the timestamp column
 				getStreams(scope.config.DataSources)
 				var editedField = "value" + (args.cell - 1)
 				var value = args.item[editedField]
-				console.log(editedField, args.item[editedField])
-				// sendValues takes (index, time, value)
-				// build data object to send to PIWebAPI
 				// send data object to PIWebAPI
 				sendValues(args.cell - 1, time, value)
 				console.log("sent values " + time + "   " + value)
 				// reset undefined item definition
 				scope.runtimeData.item = false
-				console.log(scope.runtimeData.item)
 				//force refresh of data grid
-				scope.$root.$broadcast('refreshDataForChangedSymbols')
 			}
 		})
 
@@ -313,7 +331,10 @@
 					return
 				} else {
 					grid.setColumns(cols)
-					grid.render()
+					console.log(grid.getColumns()[0])
+					gridSorter(grid.getColumns()[0], true)
+
+					// grid.render()
 					console.log("Updated Columns on the following data update: ", j)
 				}
 				// setTimeout(function() {gridOptions.api.setColumnDefs(cols)},0)
@@ -341,20 +362,16 @@
 				scope.runtimeData.sortedDataGridRows = scope.runtimeData.dataGridRows
 			}
 			if (angular.equals(scope.runtimeData.oldDataGridRows,scope.runtimeData.sortedDataGridRows)) {
-				console.log("inside sorted")
 				return
 			} 
 			if (scope.runtimeData.item) {
 				scope.runtimeData.sortedDataGridRows.push(scope.runtimeData.item)
 			}
 			if (angular.equals(scope.runtimeData.oldDataGridRows,scope.runtimeData.sortedDataGridRows) && Boolean(scope.runtimeData.item)) {
-				console.log("Inside extra row")
-				console.log(scope.runtimeData.item)
 				return
 			}
 			grid.setData(scope.runtimeData.dataGridRows, false)
 			grid.render()
-			console.log("I updated data on this data update: ", j)
 		}
 
 		//Editor for writing data
@@ -670,13 +687,11 @@
 			var sendDataPromise = _.size(batchRequest) > 0 
 									? $http.post(baseUrl + "batch", batchRequest, {withCredentials: true})
 									: $q.reject();
-									
+			start = Date.now()	
 			sendDataPromise.then(function(response){
-				setTimeout(function(){
-					scope.loading = false;
-					scope.isBtnEnabled = true;
-					}, 3000);	
-					console.log(response)
+				let time = (Date.now() - start) / 1000
+				console.log(time + "s to response from PI")
+				scope.$root.$broadcast('refreshDataForChangedSymbols')
 				}, function(error) {
 					console.log(error)
 				});
