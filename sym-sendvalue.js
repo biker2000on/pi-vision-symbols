@@ -348,7 +348,7 @@
 	
 	function configDeleteTrace(scope){
 		var index = scope.runtimeData.selectedStream;
-        var datasources = scope.symbol.DataSources;
+    var datasources = scope.symbol.DataSources;
 		var streams = scope.runtimeData.streamList;
 		
         if (datasources.length > 1) {

@@ -20,6 +20,7 @@
 				colorLevels: [],
 				defaultColorLevel: [12,15,17,18],
 				colWidths: [],
+				headers: [],
 				good: "#aaffaa",
 				warning: "#ffbb66",
 				alarm: "#ff7777",
@@ -32,9 +33,12 @@
 			}];
 		},
 		inject: ['$http', '$q'],
+		configure: {
+			deleteTrace: configDeleteTrace
+		}
 	}
 
-
+	var grid
 	var baseUrl = PV.ClientSettings.PIWebAPIUrl.replace(/\/?$/, '/'); //Example: "https://server.domain.com/piwebapi/";
 	// console.log(baseUrl)	
 	
@@ -83,7 +87,7 @@
 		datum[0] = {timestamp: Date.now()}
 		datum[1] = {timestamp: Date.now()}
 
-		let grid = new Slick.Grid(container, datum, columns, options);
+		grid = new Slick.Grid(container, datum, columns, options);
 
 		grid.setSelectionModel(new Slick.CellSelectionModel());
 
@@ -346,10 +350,8 @@
 			if (angular.equals(scope.runtimeData.oldDataGridRows,scope.runtimeData.sortedDataGridRows) && Boolean(scope.runtimeData.item)) {
 				console.log("Inside extra row")
 				console.log(scope.runtimeData.item)
-				console.log(scope.runtimeData.item, Boolean(scope.runtimeData.item))
 				return
 			}
-			// setTimeout(function() {gridOptions.api.setRowData(scope.runtimeData.dataGridRows)},0)
 			grid.setData(scope.runtimeData.dataGridRows, false)
 			grid.render()
 			console.log("I updated data on this data update: ", j)
@@ -727,19 +729,34 @@
 	  function anyStreamsSelected(){
 			return scope.runtimeData.streamList.some(function(stream){return(stream.IsSelected)});
 		};
-
-		function configDeleteTrace(scope){
-			var index = scope.runtimeData.selectedStream;
-			var datasources = scope.symbol.DataSources;
-			var streams = scope.runtimeData.streamList;
-			
-			if (datasources.length > 1) {
-				datasources.splice(index, 1);	
-				streams.splice(index,1);   
-				scope.$root.$broadcast('refreshDataForChangedSymbols');		
-			}
-		};
+	};
+	
+	function configDeleteTrace(scope){
+		console.log(scope)
+		var index = scope.runtimeData.selectedStream;
+		var datasources = scope.symbol.DataSources;
+		var streams = scope.runtimeData.streamList;
+		var colorLevels = scope.config.colorLevels
+		var headers = scope.config.headers
+		var colWidths = scope.config.colWidths
+		let cols = grid.getColumns()
+		console.log(cols)
 		
+		if (datasources.length > 1) {
+			datasources.splice(index, 1);	
+			streams.splice(index,1);   
+			colorLevels.splice(index,1)
+			colWidths.splice(index,1)
+			headers.splice(index,1)
+			cols.splice(index + 1,1)
+			for (let i =1; i < cols.length; i++) {
+				cols[i].id = "value" + (i - 1)
+				cols[i].field = "value" + (i - 1)
+			}
+			console.log(cols)
+			grid.setColumns(cols)
+			scope.$root.$broadcast('refreshDataForChangedSymbols');		
+		}
 	};
 
 	PV.symbolCatalog.register(definition); 
