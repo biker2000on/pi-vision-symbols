@@ -1,14 +1,42 @@
 <ul kendo-panel-bar class="t-side-panel-bgcolor" style="font-size: 14px;">
 	<li class="k-state-active">
-		<span class="panel-bar-label-no-wrap">Colors</span>
+		<span class="panel-bar-label-no-wrap">Traces</span>
 		
 		<div role="region"> 
-			<!-- <div class="config-option-format">
-				<pv-color-picker colorkeyword="Background Color" ng-model="config.backgroundColor" config="config"></pv-color-picker>
-			</div>	 -->
-			<!-- <div class="config-option-format">
-				<pv-color-picker colorkeyword="Trace Color" ng-model="config.traceColor" config="config"></pv-color-picker>
-			</div> -->
+			<div style="width: 85%; margin: 10px 0 15px 15px;">
+			
+				<div class="trend-config-trace-list" tabindex="0" style="padding: 4px">
+					<div ng-repeat="stream in config.labels"
+						ng-init="runtimeData.selectedStream = 0"
+						ng-click="runtimeData.selectedStream = $index"
+						ng-style="runtimeData.streamList.length > 1 && runtimeData.selectedStream === $index && { 'background-color' : '#d5d5d5' }"
+						class="trend-config-trace-list-item"
+						title="test">{{stream}}</div>
+				</div>
+				<div class="c-button-default-container" style="padding: 4px 4px 0 4px; margin-top: 0; margin-bottom: 0" ng-if="config.labels.length > 1">
+					<button type="button" class="c-primary-button trend-config-trace-arrange-button"
+							ng-click="def.configure.deleteTrace(this.$parent)">
+						<span class="k-icon k-delete"></span>
+					</button>
+				</div>
+				<div class="config-option-single-row" style="margin-left:20px; font-size: 14px;">
+					<div class="config-label">Label</div>
+					<input type="text" ng-model="config.labels[runtimeData.selectedStream]"  style="width:100px; height:100%; float: right; margin-right:15px;" class="flex-align-center">
+				</div>
+				<div class="config-option-format">
+					<pv-color-picker colorkeyword="Trace Color" ng-model="config.traceColor[runtimeData.selectedStream]" config="config"></pv-color-picker>
+				</div>
+			</div>
 		</div>
 	</li>
+	<li class="k-state-active">
+			<span class="panel-bar-label-no-wrap">Title</span>
+			
+			<div role="region"> 
+					<div class="config-option-single-row" style="margin-left:20px; font-size: 14px;">
+							<div class="config-label">Title</div>
+							<input type="text" ng-model="config.title"  style="width:100px; height:100%; float: right; margin-right:15px;" class="flex-align-center">
+						</div>
+			</div>
+		</li>
 </ul>

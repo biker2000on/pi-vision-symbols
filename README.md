@@ -19,7 +19,8 @@ All of these extensions are written for Ingevity, but are released for public us
 
 ## Durational Curves / ECDF 
 
-* multiple tags at once
-* multi-tag color adjustment
-* set title
+* DONE multiple tags at once
+* DONE multi-tag color adjustment
+* DONE set title
 * background color
+* text color

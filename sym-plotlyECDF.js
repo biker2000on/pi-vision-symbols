@@ -29,6 +29,9 @@
 					mode: 'format'
 			}];
 		},
+		configure: {
+			deleteTrace: configDeleteTrace
+		}
 	}
 
 	symbolVis.prototype.init = function(scope, elem) { 
@@ -50,6 +53,7 @@
 		function dataUpdate(data) {
 			// If there is indeed new data in the update
 			// console.log("New data received: ", data);
+			// console.log(data.Data)
 			if (data !== null && data.Data) {
 				dataArray = [ [] ];
 				indexArray = [[]]
@@ -169,6 +173,21 @@
 			scope.$root.$broadcast('refreshDataForChangedSymbols');		
 		}
 
+	};
+
+	function configDeleteTrace(scope){
+		// console.log(scope)
+		var index = scope.runtimeData.selectedStream;
+		var datasources = scope.symbol.DataSources;
+		var labels = scope.config.labels;
+		var traceColor = scope.config.traceColor
+		
+		if (datasources.length > 1) {
+			datasources.splice(index,1);   
+			labels.splice(index,1)
+			traceColor.splice(index,1)
+			scope.$root.$broadcast('refreshDataForChangedSymbols');		
+		}
 	};
 
 	PV.symbolCatalog.register(definition); 
