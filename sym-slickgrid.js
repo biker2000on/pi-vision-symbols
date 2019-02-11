@@ -24,6 +24,8 @@
 				good: "#aaffaa",
 				warning: "#ffbb66",
 				alarm: "#ff7777",
+				defaultEditor: Slick.Editors.Float,
+				editors: [],
 			} 
 		},
 		configOptions: function () {
@@ -300,6 +302,10 @@
 						}
 					})
 				}
+				// Add editor mapping for Slick.Editors.Float, Text, Integer, LongText
+				// cols.map((c,i) => {
+					
+				// })
 				// cols.unshift({headerName: "sortableDate", field: 'datetime'})
 				cols.unshift(getConfig()[0])
 				if (scope.config.colWidths.length != 0) {
@@ -683,7 +689,7 @@
 	   };
 	   
 	   	function formBulkSendRequest(streamList) {
-			console.log(streamList)
+			// console.log(streamList)
 			var batchRequest = {};
 			
 			streamList.forEach(function(stream, index){
@@ -711,8 +717,8 @@
 						'Content-Type': 'application/json'
 					}
 				}
-				console.log(stream.ValueUrl)
-				console.log(batchRequest["SendValue0"].Resource)
+				// console.log(stream.ValueUrl)
+				// console.log(batchRequest["SendValue0"].Resource)
 			});		   
 				// console.log(batchRequest);
 			return JSON.stringify(batchRequest);
