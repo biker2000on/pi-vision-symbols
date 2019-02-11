@@ -16,3 +16,10 @@ All of these extensions are written for Ingevity, but are released for public us
 * DONE update headers when config changes
 * DONE column width in config
 * DONE Datetime column custom sorter algorithm
+
+## Durational Curves / ECDF 
+
+* multiple tags at once
+* multi-tag color adjustment
+* set title
+* background color
