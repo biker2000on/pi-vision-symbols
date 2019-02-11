@@ -24,3 +24,4 @@ All of these extensions are written for Ingevity, but are released for public us
 * DONE set title
 * background color
 * text color
+* seems to be looping through something after deletion of point and generating saveable events...
