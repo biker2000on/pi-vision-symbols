@@ -82,6 +82,7 @@
 			enableAddRow: true,
 			asyncEditorLoading: false,
 			autoEdit: true,
+			editCommandHandler: queueAndExecuteCommand,
 		};
 
 		let datum = []
@@ -93,7 +94,14 @@
 		grid.setSortColumn("timestamp", true)
 		grid.setSelectionModel(new Slick.CellSelectionModel());
 
-    grid.onAddNewRow.subscribe(function (e, args) {
+		function queueAndExecuteCommand(item, column, editCommand) {
+			console.log(item, column, editCommand)
+			scope.runtimeData.previousValue = editCommand.prevSerializedValue
+			console.log(scope.runtimeData.previousValue)
+			editCommand.execute()
+		}
+		
+		grid.onAddNewRow.subscribe(function (e, args) {
 			// add logic for checking if timestamp column or other colums and submit any column change not timestamp
 			console.log("new row")
 			console.log(e, args)
@@ -114,7 +122,7 @@
     });
 
 		function gridSorter(sortCol, sortAsc) {
-			console.log("called grid sorter")
+			// console.log("called grid sorter")
 			var col = sortCol;
 			scope.runtimeData.sign = sortAsc ? 1 : -1
 			scope.runtimeData.sortedCol = sortCol
@@ -140,25 +148,6 @@
 		grid.onSort.subscribe(function (e, args) {
 			// console.log(e, args)
 			gridSorter(args.sortCol, args.sortAsc)
-			// scope.runtimeData.sign = args.sortAsc ? 1 : -1
-			// scope.runtimeData.sortedCol = args.sortCol
-      // scope.runtimeData.dataGridRows.sort(function (dataRow1, dataRow2) {
-			// 	var field = scope.runtimeData.sortedCol.field;
-			// 	if (field == "timestamp") {
-			// 		var value1 = convertDateToNumber(dataRow1[field])
-			// 		var value2 = convertDateToNumber(dataRow2[field])
-			// 	} else {
-			// 		var value1 = dataRow1[field], value2 = dataRow2[field];
-			// 	}
-			// 	var result = (value1 == value2 ? 0 : (value1 > value2 ? 1 : -1)) * scope.runtimeData.sign;
-			// 	if (result != 0) {
-			// 		return result;
-			// 	}
-			// 	return 0;
-			// });
-			// grid.invalidate();
-			// grid.setData(scope.runtimeData.dataGridRows)
-      // grid.render();
     });
 				
 		grid.onColumnsResized.subscribe(function (e, args) {
@@ -182,6 +171,7 @@
 				getStreams(scope.config.DataSources)
 				var editedField = "value" + (args.cell - 1)
 				var value = args.item[editedField]
+				value = value ? value : ""
 				// send data object to PIWebAPI
 				sendValues(args.cell - 1, time, value)
 				console.log("sent values " + time + "   " + value)
@@ -190,14 +180,6 @@
 				//force refresh of data grid
 			}
 		})
-
-		// function requiredFieldValidator(value) {
-		// 	if (value == null || value == undefined || !value.length) {
-		// 		return {valid: false, msg: "This is a required field"};
-		// 	} else {
-		// 		return {valid: true, msg: null};
-		// 	}
-		// }
 
 		// Scope setup
 		if (scope.config.colorLevels == false) {
@@ -705,25 +687,33 @@
 			var batchRequest = {};
 			
 			streamList.forEach(function(stream, index){
-					if(!stream.IsSelected || (!stream.Value && stream.Value !== 0)) return;			
-				
+				if(!stream.IsSelected || (!stream.Value && stream.Value !== 0 && stream.Value !== "")) return;			
+			
+				if (stream.Value == "") {
 					var data = {
-                        "Timestamp": stream.Timestamp,
-                        "Value": stream.IsEnumerationType ? stream.Value.Name : stream.Value
-					};
-					
-					var method = stream.isPoint ? "POST" : "PUT";
-					
-					batchRequest["SendValue" + index] = {
-								"Method": method,
-								"Resource": stream.ValueUrl,
-								"Content": JSON.stringify(data),
-								"Headers": {
-									'Content-Type': 'application/json'
-								}
+						"Timestamp": stream.Timestamp,
+						"Value": scope.runtimeData.previousValue
 					}
+				} else {
+					var data = {
+						"Timestamp": stream.Timestamp,
+						"Value": stream.IsEnumerationType ? stream.Value.Name : stream.Value
+					};
+				}
+				console.log(data)
+				var method = stream.isPoint ? "POST" : "PUT";
 				
-				});		   
+				batchRequest["SendValue" + index] = {
+					"Method": method,
+					"Resource": stream.Value == "" ? stream.ValueUrl + "?updateOption=remove" : stream.ValueUrl,
+					"Content": JSON.stringify(data),
+					"Headers": {
+						'Content-Type': 'application/json'
+					}
+				}
+				console.log(stream.ValueUrl)
+				console.log(batchRequest["SendValue0"].Resource)
+			});		   
 				// console.log(batchRequest);
 			return JSON.stringify(batchRequest);
 		};
