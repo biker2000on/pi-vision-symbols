@@ -780,6 +780,7 @@
 		var colorLevels = scope.config.colorLevels
 		var headers = scope.config.headers
 		var colWidths = scope.config.colWidths
+		var editors = scope.config.editors
 		let cols = grid.getColumns()
 		console.log(cols)
 		
@@ -789,6 +790,7 @@
 			colorLevels.splice(index,1)
 			colWidths.splice(index,1)
 			headers.splice(index,1)
+			editors.splice(index,1)
 			cols.splice(index + 1,1)
 			for (let i =1; i < cols.length; i++) {
 				cols[i].id = "value" + (i - 1)
