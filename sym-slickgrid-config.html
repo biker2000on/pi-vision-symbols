@@ -21,7 +21,7 @@
 				</div>
 				<div class="config-option-single-row" style="margin-left:20px; font-size: 14px;">
 						<div class="config-label">Header</div>
-						<input type="text" ng-model="config.headers[runtimeData.selectedStream]"  style="width:100px; height:100%; float: right; margin-right:35px;" class="ng-pristine ng-valid ng-touched">
+						<input type="text" ng-model="config.headers[runtimeData.selectedStream]"  style="width:150px; height:100%; float: right; margin-right:35px;" class="ng-pristine ng-valid ng-touched">
 					</div>
 				<div class="config-option-single-row" style="margin-left:20px; font-size: 14px;">
 					<div class="config-label">LL Limit</div>
@@ -39,6 +39,15 @@
 					<div class="config-label">HH Limit</div>
 					<input type="number" ng-model="config.colorLevels[runtimeData.selectedStream][3]"  style="width:100px; height:100%; float: right; margin-right:35px;" class="ng-pristine ng-valid ng-touched">
 				</div>
+				<div>
+					<div class="config-label">Editor</div>
+					<select name="editors" id="editors" ng-model="config.editors[runtimeData.selectedStream]" style="width:80px; height:100%; float: right; margin-right:35px;" class="ng-pristine ng-valid ng-touched">
+						<option value="String">String</option>
+						<option value="Float">Float</option>
+						<option value="Integer">Integer</option>
+					</select>
+				</div>
+				<br>
 			</div>			
 		</div>
 	</li>

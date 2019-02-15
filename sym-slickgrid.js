@@ -24,7 +24,7 @@
 				good: "#aaffaa",
 				warning: "#ffbb66",
 				alarm: "#ff7777",
-				defaultEditor: Slick.Editors.Float,
+				defaultEditor: "Float",
 				editors: [],
 			} 
 		},
@@ -43,8 +43,11 @@
 	var grid
 	var start
 	var baseUrl = PV.ClientSettings.PIWebAPIUrl.replace(/\/?$/, '/'); //Example: "https://server.domain.com/piwebapi/";
-	// console.log(baseUrl)	
-	
+	var editorObject = {
+		String: Slick.Editors.Text,
+		Float: Slick.Editors.Float,
+		Integer: Slick.Editors.Integer,
+	}
 	
 	symbolVis.prototype.init = function(scope, elem, $http, $q) { 
 		var container = elem.find('#grid')[0]
@@ -194,6 +197,11 @@
 				return scope.config.defaultColorLevel
 			})
 		}
+		if (scope.config.editors == false) {
+			scope.config.editors = scope.symbol.DataSources.map((c,i) => {
+				return scope.config.defaultEditor
+			})
+		}
 		
 		getStreams(scope.symbol.DataSources).then(function(streams){
 			scope.runtimeData.streamList = streams;
@@ -290,7 +298,7 @@
 							minWidth: 80,
 							sortable: true,
 							width: scope.config.colWidths[i+1],
-							editor: Slick.Editors.Float,
+							editor: editorObject[scope.config.editors[i]],
 						}
 					})
 				} else {
@@ -303,7 +311,7 @@
 							formatter: statusFormatter,
 							minWidth: 80,
 							sortable: true,
-							editor: Slick.Editors.Float,
+							editor: editorObject[scope.config.editors[i]],
 						}
 					})
 				}
@@ -516,14 +524,15 @@
 						}
 						else{
 							// drag & drop of a new stream
+							scope.config.headers = scope.config.headers.concat(newNames)
 							scope.runtimeData.streamList = scope.runtimeData.streamList.concat(newstreams);	
 							scope.config.streamFriendlyNames = scope.config.streamFriendlyNames.concat(newNames);
-							scope.config.headers = scope.config.headers.concat(newNames)
 						}
 					});	
 					// fix for color levels length
 					for (var i = 0; i < newdatasoucres.length; i++) {
 						scope.config.colorLevels.push(scope.config.defaultColorLevel)
+						scope.config.editors.push(scope.config.defaultEditor)
 						scope.config.colWidths.push(80)
 					}				
 				}
@@ -537,11 +546,21 @@
 						}
 					}
 				}
+				if (!angular.equals(newConfig.editors, oldConfig.editors)) {
+					for (let i = 1; i < cols.length; i++) {
+						if (cols[i].editor && cols[i]) {
+							cols[i].editor = editorObject[scope.config.editors[i-1]]
+						}
+					}
+				}
 				if (!angular.equals(newConfig.headers, oldConfig.headers)) {
 					for (let i = 1; i < cols.length; i++) {
-						if (cols[i].name) {
+						if (cols[i].name && scope.config.headers[i-1]) {
 							console.log(scope.config.headers[i-1])
 							cols[i].name = scope.config.headers[i-1]
+						} else {
+							cols[i].name = scope.runtimeData.streamList.Label
+							scope.config.headers[i-1] = scope.runtimeData.streamList.Label
 						}
 					}
 				}

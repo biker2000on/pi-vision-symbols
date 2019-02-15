@@ -4,8 +4,8 @@ All of these extensions are written for Ingevity, but are released for public us
 
 ## Left remaining on SlickGrid
 
-* editor dependent on tag type (Not required, currently just defaults to Float Editor. Could add editor selection to config.)
 * excel copy/paste functionality (This will require different keyboard shortcuts for copy and paste as the others are taken by PI Vision)
+* DONE editor dependent on tag type (Not required, currently just defaults to Float Editor. Could add editor selection to config.)
 * edit datetime and update all points
 * DONE Input of "" deletes value from PI
 * DONE Datetime editor (HTML5's datetime-local input is not very good, so left it as a text editor.)
