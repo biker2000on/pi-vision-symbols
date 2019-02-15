@@ -58,14 +58,16 @@
 
 		function statusFormatter(row, cell, value, columnDef, dataContext) {
 			console.log("caled status formatter")
-			if (scope.config.colorLevels.length >= columnDef.field[5]) {
+			if (scope.config.colorLevels.length >= columnDef.field[5] && (columnDef.editor == Slick.Editors.Float || columnDef.editor == Slick.Editors.Integer)) {
 				var rtn = { text: value, removeClasses: 'red orange green' };
 				let ll = scope.config.colorLevels[columnDef.field[5]][0]
 				let lo = scope.config.colorLevels[columnDef.field[5]][1]
 				let hi = scope.config.colorLevels[columnDef.field[5]][2]
 				let hh = scope.config.colorLevels[columnDef.field[5]][3]
 				if (value !== null || value !== "") {
-					if (value < ll) {
+					if (value == 0) {
+
+					} else if (value < ll) {
 						rtn.addClasses = "red";
 					} else if (value < lo) {
 						rtn.addClasses =  "orange";
@@ -73,9 +75,9 @@
 						rtn.addClasses =  "green";
 					} else if (value < hh) {
 						rtn.addClasses = "orange"
-					} else {
+					} else if (value >= hh) {
 						rtn.addClasses = "red"
-					}
+					} else {}
 				}
 			} else {
 				rtn = {text: value, removeClasses: 'red orange green'}
@@ -174,14 +176,17 @@
 		}); 
 
 		grid.onCellChange.subscribe(function (e,args) {
-			// console.log(e,args)
+			console.log(e,args)
 			// submit changes to PI here.
 			var time = args.item.timestamp
 			if (args.cell) { // returns true if value is not the timestamp column
 				getStreams(scope.config.DataSources)
 				var editedField = "value" + (args.cell - 1)
 				var value = args.item[editedField]
-				value = value ? value : ""
+				// allow string to input for Digital Tags with 0 as a possibility
+				if (scope.config.editors[args.cell - 1] !== "String") {
+					value = value ? value : ""
+				}
 				// send data object to PIWebAPI
 				sendValues(args.cell - 1, time, value)
 				console.log("sent values " + time + "   " + value)
