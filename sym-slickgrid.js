@@ -54,24 +54,29 @@
 		let j = 0
 
 		function statusFormatter(row, cell, value, columnDef, dataContext) {
-			var rtn = { text: value, removeClasses: 'red orange green' };
-			let ll = scope.config.colorLevels[columnDef.field[5]][0]
-			let lo = scope.config.colorLevels[columnDef.field[5]][1]
-			let hi = scope.config.colorLevels[columnDef.field[5]][2]
-			let hh = scope.config.colorLevels[columnDef.field[5]][3]
-      if (value !== null || value !== "") {
-        if (value < ll) {
-          rtn.addClasses = "red";
-        } else if (value < lo) {
-          rtn.addClasses =  "orange";
-        } else if (value < hi) {
-          rtn.addClasses =  "green";
-        } else if (value < hh) {
-					rtn.addClasses = "orange"
-				} else {
-					rtn.addClasses = "red"
+			console.log("caled status formatter")
+			if (scope.config.colorLevels.length >= columnDef.field[5]) {
+				var rtn = { text: value, removeClasses: 'red orange green' };
+				let ll = scope.config.colorLevels[columnDef.field[5]][0]
+				let lo = scope.config.colorLevels[columnDef.field[5]][1]
+				let hi = scope.config.colorLevels[columnDef.field[5]][2]
+				let hh = scope.config.colorLevels[columnDef.field[5]][3]
+				if (value !== null || value !== "") {
+					if (value < ll) {
+						rtn.addClasses = "red";
+					} else if (value < lo) {
+						rtn.addClasses =  "orange";
+					} else if (value < hi) {
+						rtn.addClasses =  "green";
+					} else if (value < hh) {
+						rtn.addClasses = "orange"
+					} else {
+						rtn.addClasses = "red"
+					}
 				}
-      }
+			} else {
+				rtn = {text: value, removeClasses: 'red orange green'}
+			}
       return rtn;
 		}
 		
@@ -499,7 +504,7 @@
 		scope.config.DataSources = scope.symbol.DataSources;
 		
 		function configChange(newConfig, oldConfig) {
-			// console.log(newConfig, oldConfig)
+			console.log("called configChange")
 			if (newConfig && oldConfig && !angular.equals(newConfig, oldConfig)) {			
 				var newdatasoucres = _.difference(newConfig.DataSources, oldConfig.DataSources);
 				if(newdatasoucres.length > 0){
@@ -515,13 +520,18 @@
 							scope.config.streamFriendlyNames = scope.config.streamFriendlyNames.concat(newNames);
 							scope.config.headers = scope.config.headers.concat(newNames)
 						}
-					});					
+					});	
+					// fix for color levels length
+					for (var i = 0; i < newdatasoucres.length; i++) {
+						scope.config.colorLevels.push(scope.config.defaultColorLevel)
+						scope.config.colWidths.push(80)
+					}				
 				}
 				let cols = grid.getColumns()
 				if (!angular.equals(newConfig.colorLevels, oldConfig.colorLevels)) {
-					console.log(cols)
+					// console.log(cols)
 					for (let i = 1; i < cols.length; i++) {
-						console.log(i)
+						// console.log(i)
 						if (cols[i].formatter && cols[i]) {
 							cols[i].formatter = statusFormatter
 						}
@@ -535,6 +545,7 @@
 						}
 					}
 				}
+				
 				grid.invalidate()
 				grid.render()
 			}
