@@ -564,8 +564,8 @@
 							console.log(scope.config.headers[i-1])
 							cols[i].name = scope.config.headers[i-1]
 						} else {
-							cols[i].name = scope.runtimeData.streamList.Label
-							scope.config.headers[i-1] = scope.runtimeData.streamList.Label
+							cols[i].name = "Placeholder"
+							scope.config.headers[i-1] = "Placeholder"
 						}
 					}
 				}
