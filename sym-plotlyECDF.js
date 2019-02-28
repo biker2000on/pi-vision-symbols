@@ -83,8 +83,8 @@
 						indexArray.push([])
 						for (var i = 0, len = c.Values.length; i < len; i++) {
 							// Try to parse the values
-							var newXValue = parseFloat( ("" + c.Values[i].Value).replace(",", "") );
-							if (!isNaN(newXValue)) {
+							if (!isNaN(c.Values[i].Value)) {
+								var newXValue = parseFloat( ("" + c.Values[i].Value).replace(",", "") );
 								dataArray[j].push(newXValue);
 								indexArray[j].push(i / len)
 							}

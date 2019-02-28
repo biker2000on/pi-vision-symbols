@@ -714,6 +714,7 @@
 			sendDataPromise.then(function(response){
 				let time = (Date.now() - start) / 1000
 				console.log(time + "s to response from PI")
+				console.log("Response: ", response)
 				scope.$root.$broadcast('refreshDataForChangedSymbols')
 				}, function(error) {
 					console.log(error)
